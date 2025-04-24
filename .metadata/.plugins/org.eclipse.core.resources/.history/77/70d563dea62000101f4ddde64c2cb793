@@ -1,0 +1,42 @@
+/*
+ * ApplicationCode.h
+ *
+ *  Created on: April 17, 2025
+ *      Author: Cameron Thomas
+ */
+
+#include "LCD_Driver.h"
+#include "GameLogic.h"
+#include "Button_Driver.h"
+#include "stm32f4xx_hal.h"
+
+#include <stdio.h>
+
+
+#ifndef INC_APPLICATIONCODE_H_
+#define INC_APPLICATIONCODE_H_
+
+void ApplicationInit(void);
+
+/* Game Functions */
+
+void buttonInit(void);
+
+void LCD_Display_Start_Screen(void);
+
+void LCD_Display_Game_Screen(void);
+
+void LCD_Display_Stats_Screen(void);
+
+void waitForUserResponse(void);
+
+#if (COMPILE_TOUCH_FUNCTIONS == 1)
+/* Called when a button is pressed. Used for interactive feel when touching screen.*/
+void triggerGameButtonResponse(uint8_t buttonMode);
+
+uint8_t checkIfTouchScreenPressed(void);
+
+uint8_t returnGameButtonPressed(uint16_t xInput, uint16_t yInput);
+#endif // (COMPILE_TOUCH_FUNCTIONS == 1)
+
+#endif /* INC_APPLICATIONCODE_H_ */

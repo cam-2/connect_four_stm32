@@ -1,0 +1,14 @@
+../Drivers/CMSIS/Include/core_cm4.h:1684:22:__NVIC_EnableIRQ	2
+../Drivers/CMSIS/Include/core_cm4.h:1722:22:__NVIC_DisableIRQ	2
+../Drivers/CMSIS/Include/core_cm4.h:1775:22:__NVIC_ClearPendingIRQ	2
+../Core/Src/ApplicationCode.c:26:6:ApplicationInit	1
+../Core/Src/ApplicationCode.c:46:6:buttonInit	1
+../Core/Src/ApplicationCode.c:57:9:checkIfTouchScreenPressed	3
+../Core/Src/ApplicationCode.c:73:9:returnGameButtonPressed	10
+../Core/Src/ApplicationCode.c:94:6:triggerGameButtonResponse	1
+../Core/Src/ApplicationCode.c:106:6:waitForUserResponse	2
+../Core/Src/ApplicationCode.c:114:6:LCD_Display_Start_Screen	1
+../Core/Src/ApplicationCode.c:120:6:LCD_Display_Stats_Screen	1
+../Core/Src/ApplicationCode.c:127:6:displayMenu	2
+../Core/Src/ApplicationCode.c:137:6:EXTI0_IRQHandler	2
+../Core/Src/ApplicationCode.c:152:6:TIM2_IRQHandler	1

@@ -1,0 +1,14 @@
+../Drivers/CMSIS/Include/core_cm4.h:1684:22:__NVIC_EnableIRQ	2
+../Core/Src/GameLogic.c:26:6:setGameMode	1
+../Core/Src/GameLogic.c:31:6:resetBoard	1
+../Core/Src/GameLogic.c:36:6:incrementWinCount	2
+../Core/Src/GameLogic.c:48:6:placeCoin	1
+../Core/Src/GameLogic.c:56:9:checkIfCanPlaceCoin	4
+../Core/Src/GameLogic.c:74:6:moveCoin	2
+../Core/Src/GameLogic.c:87:6:checkIfUserMovedCoin	6
+../Core/Src/GameLogic.c:104:6:resetCoinPos	1
+../Core/Src/GameLogic.c:110:6:startNewGame	1
+../Core/Src/GameLogic.c:118:6:playTurn	6
+../Core/Src/GameLogic.c:152:6:checkWinner	10
+../Core/Src/GameLogic.c:177:9:checkWinnerByDirection	5
+../Core/Src/GameLogic.c:196:6:playGame	2

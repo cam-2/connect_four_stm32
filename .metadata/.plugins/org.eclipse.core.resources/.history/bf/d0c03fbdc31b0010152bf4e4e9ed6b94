@@ -1,0 +1,27 @@
+/*
+ * GameData.h
+ *
+ *  Created on: April 17, 2025
+ *      Author: Cameron Thomas
+ */
+
+#ifndef INC_GAMEDATA_H_
+#define INC_GAMEDATA_H_
+
+struct buttonBounds_t {
+
+	uint16_t xLower;
+	uint16_t xUpper;
+	uint16_t yLower;
+	uint16_t yUpper;
+};
+
+struct coin_t {
+
+	uint8_t xPos;
+	uint8_t xPos;
+	uint8_t radius;
+	uint16_t color;
+};
+
+#endif /* INC_GAMEDATA_H_ */

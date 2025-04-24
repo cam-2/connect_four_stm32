@@ -1,0 +1,135 @@
+/*
+ * Timer_Driver.h
+ *
+ *  Created on: Feb 27, 2025
+ *      Author: cammy
+ */
+
+#ifndef TIMER_DRIVER_H_
+#define TIMER_DRIVER_H_
+
+#include "InterruptControl.h"
+
+#define TIM2_TIMER_NUM 2
+
+#define CLOCK_DIVISION_CR1_OFFSET 8
+#define CLOCK_DIVISION_DEFAULT 0b00
+#define CLOCK_DIVISION_2 0b01
+#define CLOCK_DIVISION_4 0b10
+
+#define COUNTER_ENABLE_CR1_OFFSET 0
+
+#define CENTER_ALIGNED_CR1_OFFSET 5
+#define EDGE_ALIGNED_MODE 0b00
+#define CENTER_ALIGNED_MODE_1 0b01
+#define CENTER_ALIGNED_MODE_2 0b10
+#define CENTER_ALIGNED_MODE_3 0b11
+
+#define MASTER_MODE_RESET 0b000
+#define MASTER_MODE_ENABLE 0b000
+#define MASTER_MODE_UPDATE 0b010
+#define MASTER_MODE_COMPARE_PULSE 0b011
+
+#define ONE_PULSE_MODE_CR1_OFFSET 3
+#define ONE_PULSE_MODE_DISABLE 0
+#define ONE_PULSE_MODE_ENABLE 1
+
+#define TIM_ARR_BUFFER_CR1_OFFSET 7
+#define TIM_ARR_BUFFER_DISABLE 0
+#define TIM_ARR_BUFFER_ENABLE 1
+
+#define TIM_COUNT_DIRECTION_CR1_OFFSET 4
+#define TIM_COUNT_DIRECTION_UP 0
+#define TIM_COUNT_DIRECTION_DOWN 1
+
+#define TIM_UPDATE_DISABLE_CR1_OFFSET 1
+#define UPDATE_ENABLE 0
+#define UPDATE_DISABLED 1
+
+#define TIM_UPDATE_INTERRUPTS_DIER_OFFSET 0
+#define UPDATE_INTERRUPTS_ENABLE 1
+#define UPDATE_INTERRUPTS_DISABLE 0
+
+
+/* struct for a Timer Config.
+ * The ARR value is 32 bits since TIM2 and TIM5 both use the full 32 bits.
+ * The 16 bit buffer at the end has no purpose, it just makes sure the struct
+ * is aligned by modulo 4 bytes (which is likely unnecessary, just doing it
+ * for good practice).
+ */
+typedef struct {
+
+	uint32_t autoReloadValue;
+	uint16_t prescalerValue;
+	uint8_t masterModeSelection;
+	uint8_t clockDivisionSelection;
+	uint8_t centerAlignModeSelection;
+	uint8_t autoReloadBufferEnable;
+	uint8_t timerCountDownEnable;
+	uint8_t interruptUpdateEnable;
+	uint8_t updateDisable;
+	uint8_t onePulseModeEnable;
+	uint16_t buffer;
+
+} GPTimer_Config_t;
+
+typedef struct {
+
+	volatile uint32_t CR1;
+	volatile uint32_t CR2;
+	volatile uint32_t SMCR;
+	volatile uint32_t DIER;
+	volatile uint32_t SR;
+	volatile uint32_t EGR;
+	volatile uint32_t CCMR1;
+	volatile uint32_t CCMR2;
+	volatile uint32_t CCER;
+	volatile uint32_t CNT;
+	volatile uint32_t PSC;
+	volatile uint32_t ARR;
+	volatile uint32_t reserved0;
+	volatile uint32_t CCR1;
+	volatile uint32_t CCR2;
+	volatile uint32_t CCR3;
+	volatile uint32_t CCR4;
+	volatile uint32_t reserved1;
+	volatile uint32_t DCR;
+	volatile uint32_t DMAR;
+	volatile uint32_t OR;
+
+} GPTIMR_RegDef_t;
+
+
+void initializeTimer(GPTIMR_RegDef_t* timer, GPTimer_Config_t config);
+
+
+void timerClockControl(GPTIMR_RegDef_t* timer, uint8_t valueToWrite);
+
+
+void startTimer(GPTIMR_RegDef_t* timer);
+
+
+void stopTimer(GPTIMR_RegDef_t* timer);
+
+/* Resets the timer's value */
+void resetTimer(GPTIMR_RegDef_t* timer);
+
+/* Enables or disables a timer's interrupt */
+void setTimerInterrupt(GPTIMR_RegDef_t* timer, uint8_t valueToWrite);
+
+
+void setTimerARR(GPTIMR_RegDef_t* timer, uint32_t newARRValue);
+
+
+void setTimerCount(GPTIMR_RegDef_t* timer, uint32_t newCountValue);
+
+/* Returns number of timer based on timer's address */
+uint16_t timerReturnNum(GPTIMR_RegDef_t* port);
+
+/* Returns a timer's Auto Reload value */
+uint32_t returnTimerARR(GPTIMR_RegDef_t* timer);
+
+/* Returns a timer's current value */
+uint32_t returnTimerValue(GPTIMR_RegDef_t* timer);
+
+#endif /* TIMER_DRIVER_H_ */

@@ -1,0 +1,19 @@
+#ifndef BUTTON_DRIVER_H
+#define BUTTON_DRIVER_H
+
+#include "stm32f4xx_hal.h"
+#include "InterruptControl.h"
+
+#define BUTTON_PIN_NUM GPIO_PIN_0
+#define BUTTON_IRQ_NUM EXTI0_IRQn
+#define COMPILE_BUTTON_INTERRUPTS 1
+#define IS_PRESSED 1
+#define NOT_PRESSED 0
+
+void button_Init();
+
+void button_Interrupt_Init();
+
+uint8_t isPressed();
+
+#endif

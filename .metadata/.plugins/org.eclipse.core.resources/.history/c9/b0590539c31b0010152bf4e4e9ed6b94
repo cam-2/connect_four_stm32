@@ -1,0 +1,14 @@
+/*
+ * GameLogic.h
+ *
+ *  Created on: Apr 17, 2025
+ *      Author: Cameron Thomas
+ */
+
+#ifndef INC_GAMELOGIC_H_
+#define INC_GAMELOGIC_H_
+
+#define AI_MODE_SELECT 1
+#define TWO_PLAYER_MODE_SELECT 1
+
+#endif /* INC_GAMELOGIC_H_ */

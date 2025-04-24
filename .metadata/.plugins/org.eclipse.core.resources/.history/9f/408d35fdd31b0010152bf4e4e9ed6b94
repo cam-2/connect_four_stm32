@@ -1,0 +1,22 @@
+/*
+ * GameLogic.h
+ *
+ *  Created on: Apr 17, 2025
+ *      Author: Cameron Thomas
+ */
+
+#ifndef INC_GAMELOGIC_H_
+#define INC_GAMELOGIC_H_
+
+#include "GameData.h"
+#include "LCD_Driver.h"
+
+#define AI_MODE_SELECT 1
+#define TWO_PLAYER_SELECT 2
+
+void setGameMode(uint8_t mode);
+void startGame();
+
+uint8_t checkWinner(void);
+
+#endif /* INC_GAMELOGIC_H_ */

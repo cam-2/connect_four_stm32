@@ -1,0 +1,17 @@
+#ifndef INTERRUPT_CONTROL_H
+#define INTERRUPT_CONTROL_H
+
+#include "stm32f4xx_hal.h"
+
+
+#define EXTI0_IRQ_NUM 6
+#define TIM2_IRQ_NUM 28
+#define TIM_UIF_OFFSET 0
+
+void enableIRQ(uint8_t IRQNumber);
+void disableIRQ(uint8_t IRQNumber);
+void setPendingIRQ(uint8_t IRQNumber);
+void clearPendingIRQ(uint8_t IRQNumber);
+void clearPendingEXTI(uint8_t pinNumber);
+
+#endif

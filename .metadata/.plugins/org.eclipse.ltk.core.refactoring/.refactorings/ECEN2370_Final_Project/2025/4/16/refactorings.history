@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;ECEN2370_Final_Project/Core/Src/GameLogic.C&apos; to &apos;GameLogic.c&apos;" description="Rename resource &apos;GameLogic.C&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Src/GameLogic.C" name="GameLogic.c" stamp="1744928009656" updateReferences="true"/>
+</session>

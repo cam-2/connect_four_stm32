@@ -1,0 +1,150 @@
+/*
+ * ApplicationCode.c
+ *
+ *  Created on: Dec 30, 2023 (updated 11/12/2024) Thanks Donavon! 
+ *      Author: Xavion
+ *
+ *  Edited on: April 17, 2025
+ *  	Editor: Cameron Thomas
+ */
+
+#include "ApplicationCode.h"
+
+/* Static variables */
+static uint8_t gameStarted = 0;
+static uint8_t buttonMode = NO_MODE_SELECTED;
+
+
+extern void initialise_monitor_handles(void); 
+
+static STMPE811_TouchData StaticTouchData;
+
+#if COMPILE_TOUCH_FUNCTIONS == 1
+#endif // COMPILE_TOUCH_FUNCTIONS
+
+void ApplicationInit(void)
+{
+	initialise_monitor_handles(); // Allows printf functionality
+    buttonInit();
+
+    LTCD__Init();
+    LTCD_Layer_Init(0);
+    LCD_Clear(0, LCD_COLOR_WHITE);
+    LCD_Connect_Four_Init();
+
+    #if COMPILE_TOUCH_FUNCTIONS == 1
+	InitializeLCDTouch();
+
+	// This is the orientation for the board to be directly up where the buttons are vertically above the screen
+	// Top left would be low x value, high y value. Bottom right would be low x value, low y value.
+	StaticTouchData.orientation = STMPE811_Orientation_Portrait_2;
+
+	#endif // COMPILE_TOUCH_FUNCTIONS
+}
+
+void buttonInit(void) {
+
+	#if COMPILE_BUTTON_INTERRUPTS == 1
+	button_Interrupt_Init();
+	#else
+	button_Init();
+	#endif
+}
+
+#if COMPILE_TOUCH_FUNCTIONS == 1
+
+uint8_t checkIfTouchScreenPressed(void) {
+
+	if(returnTouchStateAndLocation(&StaticTouchData) == STMPE811_State_Pressed) {
+		/* The coordinates are inverted from the StaticTouchData struct,
+		 * So we need to un-invert them when we pass it into our function to check which game button
+		 * is pressed. In this case, the buttons are fairly centered so I ignored inverting the x-coordinate.
+		 * */
+		buttonMode = returnGameButtonPressed(StaticTouchData.x, LCD_PIXEL_HEIGHT - StaticTouchData.y);
+
+		if(buttonMode) {
+			gameStarted++;
+			triggerGameButtonResponse();
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+uint8_t returnGameButtonPressed(uint16_t xInput, uint16_t yInput) {
+
+	if((xInput >= BUTTON_ONE_X_LOWER && xInput <= BUTTON_ONE_X_UPPER) && (yInput >= BUTTON_ONE_Y_LOWER && yInput <= BUTTON_ONE_Y_UPPER)) {
+		return AI_MODE_SELECT;
+	}
+
+	/* Handles both selecting "Two Player Mode" and the "Play Again" button */
+	else if((xInput >= BUTTON_TWO_X_LOWER && xInput <= BUTTON_TWO_X_UPPER) && (yInput >= BUTTON_TWO_Y_LOWER && yInput <= BUTTON_TWO_Y_UPPER)) {
+		if(!buttonMode) {
+			return TWO_PLAYER_SELECT;
+		}
+		else {
+			return buttonMode;
+		}
+	}
+
+	return NO_MODE_SELECTED;
+}
+
+void triggerGameButtonResponse() {
+
+	if(buttonMode == AI_MODE_SELECT) {
+
+		/* Provides an interactive feel when you press the game button.*/
+		LCD_Draw_Game_Button(BUTTON_ONE_X_LOWER, BUTTON_ONE_X_UPPER - BUTTON_ONE_X_LOWER, BUTTON_ONE_Y_LOWER, BUTTON_ONE_Y_UPPER - BUTTON_ONE_Y_LOWER, LCD_COLOR_GREEN);
+		HAL_Delay(750);
+	    LCD_Clear(0, LCD_COLOR_WHITE);
+		setGameMode(AI_MODE_SELECT);
+		startNewGame();
+	}
+
+	else if(buttonMode == TWO_PLAYER_SELECT) {
+
+		LCD_Draw_Game_Button(BUTTON_TWO_X_LOWER, BUTTON_TWO_X_UPPER - BUTTON_TWO_X_LOWER, BUTTON_TWO_Y_LOWER, BUTTON_TWO_Y_UPPER - BUTTON_TWO_Y_LOWER, LCD_COLOR_GREEN);
+		HAL_Delay(750);
+	    LCD_Clear(0, LCD_COLOR_WHITE);
+		setGameMode(TWO_PLAYER_SELECT);
+		startNewGame();
+	}
+}
+
+#endif // COMPILE_TOUCH_FUNCTIONS
+
+/* Game Functions */
+
+void waitForUserResponse(void) {
+	#if COMPILE_TOUCH_FUNCTIONS == 1
+	while(!checkIfTouchScreenPressed()) {
+		;
+	}
+	#endif
+}
+
+void LCD_Display_Start_Screen(void) {
+
+	LCD_Clear(0, LCD_COLOR_WHITE);
+	displayStartScreen();
+}
+
+void LCD_Display_Stats_Screen(void) {
+
+    HAL_Delay(750);
+	LCD_Clear(0, LCD_COLOR_WHITE);
+	displayStatsScreen();
+}
+
+void displayMenu(void) {
+
+	if(!gameStarted) {
+		LCD_Display_Start_Screen();
+	}
+	else {
+		LCD_Display_Stats_Screen();
+	}
+}
+
+

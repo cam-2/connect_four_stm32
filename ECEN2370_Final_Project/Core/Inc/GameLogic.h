@@ -17,37 +17,55 @@
 #define TWO_PLAYER_SELECT 2
 #define NO_MODE_SELECTED 0
 
-#define CONNECT_FOUR_ROW_COUNT 6
-#define CONNECT_FOUR_COLUMN_COUNT 7
+#define NUM_ROWS 6
+#define NUM_COLS 7
 
-#define COIN_DEFAULT_X 4
-#define COIN_GAME_LOGIC_OFFSET 1
+#define COIN_DEFAULT_COL 3
+#define COIN_DEFAULT_ROW 0
 #define COIN_DEFAULT_Y 40
+#define COIN_GAME_LOGIC_OFFSET 1
 
-#define YELLOW 0
-#define RED 1
+#define MAX_SCORE 0x7F
+#define TIE_SCORE 0x80
+#define MIN_SCORE 0x80
+
+#define YELLOW 1
+#define RED 2
 
 #define FALSE 0
 #define TRUE 1
 
+#define MAX_DEPTH_SEARCH 2
+
 typedef struct {
-	uint16_t xPos;
+	uint8_t col;
+	uint8_t row;
 	uint16_t yPos;
 } coin_t;
+
+typedef struct {
+	int8_t score;
+	uint8_t col;
+} utilityScore_t;
 
 void setGameMode(uint8_t mode);
 void resetBoard(void);
 void startNewGame(void);
 void playGame(void);
 void playTurn(void);
-void checkWinner(uint8_t row, uint8_t col, uint8_t player);
-uint8_t checkWinnerByDirection(uint8_t row, uint8_t col, uint8_t rowDelta, uint8_t colDelta, uint8_t player);
 void incrementWinCount(void);
+void checkTie(void);
+uint8_t checkWinner(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t player);
+uint8_t getScoreByDirection(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t rowDelta, uint8_t colDelta, uint8_t player);
 
 void resetCoinPos(void);
-void moveCoin(uint8_t col);
-uint8_t checkIfCanPlaceCoin(uint8_t col);
 void checkIfUserMovedCoin(void);
-void placeCoin(uint8_t row, uint8_t column, uint8_t player, uint16_t color);
+void moveCoin(uint8_t col);
+void placeCoin(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col);
+uint8_t canPlaceCoin(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t col);
+
+/* Alpha-beta search functions for AI logic. */
+int8_t getScoreOfPosition(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t player);
+utilityScore_t alphaBeta(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t depth, int8_t alpha, int8_t beta, uint8_t row, uint8_t col, uint8_t playerToMove, uint8_t prevPlayer);
 
 #endif /* INC_GAMELOGIC_H_ */

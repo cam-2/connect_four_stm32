@@ -33,7 +33,7 @@ void triggerGameButtonResponse();
 
 uint8_t checkIfTouchScreenPressed(void);
 
-uint8_t returnGameButtonPressed(uint16_t xInput, uint16_t yInput);
+uint8_t gameButtonPressed(uint16_t xInput, uint16_t yInput);
 #endif // (COMPILE_TOUCH_FUNCTIONS == 1)
 
 #endif /* INC_APPLICATIONCODE_H_ */

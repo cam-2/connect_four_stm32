@@ -10,13 +10,13 @@
 static uint8_t sessionGameMode = NO_MODE_SELECTED;
 static uint8_t playerTurn = YELLOW;
 static uint8_t gameOver = FALSE;
-
-static uint8_t gameBoard[CONNECT_FOUR_ROW_COUNT][CONNECT_FOUR_COLUMN_COUNT];
+static uint8_t coinDropped = FALSE;
 
 static STMPE811_TouchData StaticTouchData;
 
 extern TIM_HandleTypeDef htim2;
 
+uint8_t gameBoard[NUM_ROWS][NUM_COLS];
 uint8_t yellowWinCount = 0;
 uint8_t redWinCount = 0;
 uint32_t numSecondsElapsedInGame = 0;
@@ -33,6 +33,23 @@ void resetBoard(void) {
 }
 
 
+void resetCoinPos(void) {
+	gameCoin.col = COIN_DEFAULT_COL;
+	gameCoin.row = COIN_DEFAULT_ROW;
+	gameCoin.yPos = COIN_DEFAULT_Y;
+	coinDropped = FALSE;
+}
+
+
+void startNewGame(void) {
+	resetBoard();
+	gameOver = FALSE;
+    numSecondsElapsedInGame = 0;
+	playerTurn = YELLOW;
+	playGame();
+}
+
+
 void incrementWinCount(void) {
 
 	if(playerTurn == YELLOW) {
@@ -45,25 +62,60 @@ void incrementWinCount(void) {
 }
 
 
-void placeCoin(uint8_t row, uint8_t column, uint8_t player, uint16_t color) {
-	gameBoard[row][column] = player;
-	LCD_Display_Coin((column + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, LCD_PIXEL_HEIGHT - BORDER_Y_OFFSET - (row + COIN_GAME_LOGIC_OFFSET) * BOARD_Y_OFFSET, color);
-	checkWinner(row, column, player);
-	playerTurn = (playerTurn + 1) % 2;
+/* Checks which side of the screen is pressed, as well as if we are still
+ * within the bounds of the board.
+ * */
+void checkIfUserMovedCoin(void) {
+	if(returnTouchStateAndLocation(&StaticTouchData) == STMPE811_State_Pressed) {
+		HAL_Delay(200);
+		if(StaticTouchData.x > LCD_PIXEL_WIDTH / 2 && gameCoin.col > 0) {
+			moveCoin(gameCoin.col - 1);
+		}
+		else if(StaticTouchData.x < LCD_PIXEL_WIDTH / 2 && gameCoin.col < 6) {
+			moveCoin(gameCoin.col + 1);
+		}
+	}
 }
 
 
-uint8_t checkIfCanPlaceCoin(uint8_t col) {
+void moveCoin(uint8_t col) {
+	clearFloatingCoin((gameCoin.col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, gameCoin.yPos);
+	gameCoin.col = col;
 
-	for(int row = 0; row < CONNECT_FOUR_ROW_COUNT; row++) {
-		if(!gameBoard[row][col]) {
-			clearFloatingCoin(gameCoin.xPos * BOARD_X_OFFSET, gameCoin.yPos);
-			if(playerTurn == 0) {
-				placeCoin(row, col, 'Y', LCD_COLOR_YELLOW);
-			}
-			else {
-				placeCoin(row, col, 'R', LCD_COLOR_RED);
-			}
+	if(playerTurn == YELLOW) {
+		LCD_Display_Coin((gameCoin.col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_YELLOW);
+	}
+	else {
+		LCD_Display_Coin((gameCoin.col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_RED);
+	}
+}
+
+
+void placeCoin(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col) {
+
+	if(board[row][col]) {
+		return;
+	}
+
+	board[row][col] = playerTurn;
+	coinDropped = TRUE;
+
+	if(playerTurn == YELLOW) {
+		LCD_Display_Coin((col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, LCD_PIXEL_HEIGHT - BORDER_Y_OFFSET - (row + COIN_GAME_LOGIC_OFFSET) * BOARD_Y_OFFSET, LCD_COLOR_YELLOW);
+	}
+	else if(sessionGameMode == TWO_PLAYER_SELECT){
+		LCD_Display_Coin((col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, LCD_PIXEL_HEIGHT - BORDER_Y_OFFSET - (row + COIN_GAME_LOGIC_OFFSET) * BOARD_Y_OFFSET, LCD_COLOR_RED);
+	}
+
+	return;
+}
+
+
+uint8_t canPlaceCoin(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t col) {
+
+	for(int row = 0; row < NUM_ROWS; row++) {
+		if(!board[row][col]) {
+			gameCoin.row = row;
 			return TRUE;
 		}
 	}
@@ -71,132 +123,274 @@ uint8_t checkIfCanPlaceCoin(uint8_t col) {
 }
 
 
-void moveCoin(uint8_t col) {
-	clearFloatingCoin(gameCoin.xPos * BOARD_X_OFFSET, gameCoin.yPos);
-	gameCoin.xPos = col;
+uint8_t getScoreByDirection(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t rowDelta, uint8_t colDelta, uint8_t player) {
+	uint8_t score = 0;
 
-	if(playerTurn == YELLOW) {
-		LCD_Display_Coin(gameCoin.xPos * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_YELLOW);
-	}
-	else {
-		LCD_Display_Coin(gameCoin.xPos * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_RED);
-	}
+    for (uint8_t count = 0; count < 4; count++) {
+        if (row < NUM_ROWS && row >= 0 && col < NUM_COLS && col >= 0) {
+            if (board[row][col] == player) {
+                score++;
+            }
+        }
+        else {
+        	return score;
+        }
+        row += rowDelta;
+        col += colDelta;
+    };
+    return score;
 }
 
-
-void checkIfUserMovedCoin(void) {
-	if(returnTouchStateAndLocation(&StaticTouchData) == STMPE811_State_Pressed) {
-		HAL_Delay(200);
-		/* Checks which side of the screen is pressed, as well as if we are still
-		 * within the bounds of the board.
-		 * */
-		if(StaticTouchData.x > LCD_PIXEL_WIDTH / 2 && gameCoin.xPos > 1) {
-			moveCoin(gameCoin.xPos - 1);
-		}
-		else if(StaticTouchData.x < LCD_PIXEL_WIDTH / 2 && gameCoin.xPos < 7) {
-			moveCoin(gameCoin.xPos + 1);
-		}
-	}
-}
-
-
-void resetCoinPos(void) {
-	gameCoin.xPos = COIN_DEFAULT_X;
-	gameCoin.yPos = COIN_DEFAULT_Y;
-}
-
-
-void startNewGame(void) {
-	resetBoard();
-	gameOver = FALSE;
-    numSecondsElapsedInGame = 0;
-	playGame();
-}
-
-
-void playTurn(void) {
-	resetCoinPos();
-	if(playerTurn == YELLOW) {
-		/* Wait for touch screen input to select where coin will drop.
-		 * Between each input, redraw coin in position.
-		 * When button is pressed, coin will drop. This means we enable interrupts
-		 * for the button in this loop, then disable them if a coin can be placed.
-		 * */
-		LCD_Display_Coin(gameCoin.xPos * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_YELLOW);
-		__NVIC_EnableIRQ(EXTI0_IRQn);
-		while(playerTurn == YELLOW) {
-			checkIfUserMovedCoin();
-		}
-	}
-
-	else {
-		if(sessionGameMode == AI_MODE_SELECT) {
-			; // To be determined if AI will use alpha-beta search or RNG.
-		}
-		else if(sessionGameMode == TWO_PLAYER_SELECT){
-			LCD_Display_Coin(gameCoin.xPos * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_RED);
-			__NVIC_EnableIRQ(EXTI0_IRQn);
-			while(playerTurn == RED) {
-				checkIfUserMovedCoin();
-			}
-		}
-	}
-}
 
 /* First check if theres a win condition by checking the last piece placed.
  * If no win condition, check for the case that a draw has occured,
  * (all pieces in column are full).
  * Otherwise, return false.
  */
-void checkWinner(uint8_t row, uint8_t column, uint8_t player) {
+uint8_t checkWinner(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t column, uint8_t player) {
 
-	/* Horizontal check, left and right of coin placement. */
-	if(checkWinnerByDirection(row, column, 0, 1, player) || checkWinnerByDirection(row, column, 0, -1, player)) return;
+	/* Horizontal check */
+	for(uint8_t col = 0; col < NUM_COLS - 3; col++) {
+		for(uint8_t row = 0; row < NUM_ROWS; row++) {
+			if(board[row][col] == player && board[row][col + 1] == player && board[row][col + 2] == player && board[row][col + 3] == player) {
+				return TRUE;
+			}
+		}
+	}
 
 	/* Vertical check */
-	if(checkWinnerByDirection(row, column, -1, 0, player)) return;
+	for(uint8_t col = 0; col < NUM_COLS; col++) {
+		for(uint8_t row = 0; row < NUM_ROWS - 3; row++) {
+			if(board[row][col] == player && board[row + 1][col] == player && board[row + 2][col] == player && board[row + 3][col] == player) {
+				return TRUE;
+			}
+		}
+	}
 
-	/* Descending Diagonal check, from bottom and top of diagonal. */
-	if(checkWinnerByDirection(row, column, 1, -1, player) || checkWinnerByDirection(row, column, -1, 1, player)) return;
+	/* Ascending Diagonal check */
+	for(uint8_t col = 0; col < NUM_COLS - 3; col++) {
+		for(uint8_t row = 0; row < NUM_ROWS - 3; row++) {
+			if(board[row][col] == player && board[row + 1][col + 1] == player && board[row + 2][col + 2] == player && board[row + 3][col + 3] == player) {
+				return TRUE;
+			}
+		}
+	}
 
-	/* Ascending Diagonal check, from bottom and top of diagonal. */
-	if(checkWinnerByDirection(row, column, 1, 1, player) || checkWinnerByDirection(row, column, -1, -1, player)) return;
+	/* Descending Diagonal check*/
+	for(uint8_t col = 0; col < NUM_COLS - 3; col++) {
+		for(uint8_t row = 3; row < NUM_ROWS; row++) {
+			if(board[row][col] == player && board[row - 1][col + 1] == player && board[row - 2][col + 2] == player && board[row - 3][col + 3] == player) {
+				return TRUE;
+			}
+		}
+	}
 
+	return FALSE;
+}
+
+void checkTie(void) {
 	/* Tie condition check */
-	for(uint8_t col = 0; col < CONNECT_FOUR_COLUMN_COUNT; col++) {
-		if(!gameBoard[CONNECT_FOUR_ROW_COUNT - COIN_GAME_LOGIC_OFFSET][col]) {
+	for(uint8_t col = 0; col < NUM_COLS; col++) {
+		if(!gameBoard[NUM_ROWS - COIN_GAME_LOGIC_OFFSET][col]) {
 			return;
 		}
 	}
 	gameOver = TRUE;
-	return;
 }
 
 
-uint8_t checkWinnerByDirection(uint8_t row, uint8_t col, uint8_t rowDelta, uint8_t colDelta, uint8_t player) {
+/* During human player turn, wait for touch screen input to select
+ * where coin will drop. Between each input, redraw coin in position.
+ * When button is pressed, coin will drop. This means we enable interrupts
+ * for the button in this loop, then disable them if a coin can be placed.
+ * */
+void playTurn(void) {
+	resetCoinPos();
 
-    for (uint8_t count = 0; count < 4; count++) {
-        if (row < CONNECT_FOUR_ROW_COUNT && row >= 0 && col < CONNECT_FOUR_COLUMN_COUNT && col >= 0) {
-            if (gameBoard[row][col] != player) {
-                return FALSE;
-            }
-        }
-        else {
-        	return FALSE;
-        }
-        row += rowDelta;
-        col += colDelta;
-    }
-    incrementWinCount();
-    return TRUE;
+	if(playerTurn == YELLOW) {
+		LCD_Display_Coin((gameCoin.col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_YELLOW);
+		__NVIC_EnableIRQ(BUTTON_IRQ_NUM);
+		while(!coinDropped) {
+			checkIfUserMovedCoin();
+		}
+	}
+
+	else {
+		LCD_Display_Coin((gameCoin.col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_RED);
+		if(sessionGameMode == AI_MODE_SELECT) {
+			utilityScore_t AIMove = alphaBeta(gameBoard, 0, MIN_SCORE, MAX_SCORE, 0, 0, RED, YELLOW);
+			gameCoin.col = AIMove.col;
+			if(canPlaceCoin(gameBoard, gameCoin.col)) {
+				placeCoin(gameBoard, gameCoin.row, gameCoin.col);
+				LCD_Display_Coin((gameCoin.col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, LCD_PIXEL_HEIGHT - BORDER_Y_OFFSET - (gameCoin.row + COIN_GAME_LOGIC_OFFSET) * BOARD_Y_OFFSET, LCD_COLOR_RED);
+			}
+			else {
+				/* Debug */
+			    LCD_Clear(0, LCD_COLOR_RED);
+			}
+		}
+		else if(sessionGameMode == TWO_PLAYER_SELECT){
+			__NVIC_EnableIRQ(BUTTON_IRQ_NUM);
+			while(!coinDropped) {
+				checkIfUserMovedCoin();
+			}
+		}
+	}
+
+	if(checkWinner(gameBoard, gameCoin.row, gameCoin.col, playerTurn)) {
+		incrementWinCount();
+	}
+	checkTie();
+	playerTurn = (playerTurn == YELLOW) ? RED : YELLOW;
 }
 
 
 void playGame(void) {
+
 	LCD_Draw_Board_Structure();
     HAL_TIM_Base_Start_IT(&htim2);
 	while(!gameOver) {
 		playTurn();
 	}
     HAL_TIM_Base_Stop_IT(&htim2);
+}
+
+
+/*****************************************/
+/*****************************************/
+/********** AI FUNCTIONS START ***********/
+/*****************************************/
+/*****************************************/
+
+
+int8_t getScoreOfPosition(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t player) {
+
+	if(checkWinner(board, row, col, player)) {
+		return MAX_SCORE;
+	}
+
+	int8_t score = 0;
+
+	/* Horizontal Scores */
+	score += getScoreByDirection(board, row, col, 0, 1, player);
+	score += getScoreByDirection(board, row, col, 0, -1, player);
+
+	/* Vertical Score */
+	score += getScoreByDirection(board, row, col, -1, 0, player);
+
+	/* Descending Diagonal Score */
+	score += getScoreByDirection(board, row, col, 1, -1, player);
+	score += getScoreByDirection(board, row, col, -1, 1, player);
+
+	/* Ascending Diagonal Score */
+	score += getScoreByDirection(board, row, col, 1, 1, player);
+	score += getScoreByDirection(board, row, col, -1, -1, player);
+
+	/* Tie condition check */
+	for(uint8_t col = 0; col < NUM_COLS; col++) {
+		if(!gameBoard[NUM_ROWS - COIN_GAME_LOGIC_OFFSET][col]) {
+			return score;
+		}
+	}
+
+	return TIE_SCORE;
+}
+
+
+/* MiniMax algorithm with alpha-beta pruning. Maximizing player
+ * will always be Red in this context, as that will be the AI.
+ */
+utilityScore_t alphaBeta(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t depth, int8_t alpha, int8_t beta, uint8_t row, uint8_t col, uint8_t playerToMove, uint8_t prevPlayer) {
+
+	utilityScore_t scoreAndMove = { .col = 0, .score = 0 };
+	scoreAndMove.score = getScoreOfPosition(board, row, col, prevPlayer);
+
+	/* Calculate utility of the terminal node in our minimax tree. */
+	if(depth == MAX_DEPTH_SEARCH || scoreAndMove.score == MAX_SCORE || scoreAndMove.score == TIE_SCORE) {
+		/* Player is maximizing, so just return the score calculated. */
+		if(prevPlayer == RED) {
+
+			return scoreAndMove;
+		}
+
+		/* Enemy player won, so set the weight heavily low. */
+		if(scoreAndMove.score == MAX_SCORE) {
+
+			scoreAndMove.score = MIN_SCORE;
+		}
+
+		scoreAndMove.score = -scoreAndMove.score;
+		return scoreAndMove;
+	}
+
+	/* If maximizing and not terminal, search for the maximum in this branch. */
+	if(playerToMove == RED) {
+		/* Set to min score possible to find max score of this branch */
+		scoreAndMove.score = MIN_SCORE;
+		uint8_t boardCopy[NUM_ROWS][NUM_COLS];
+
+		for(int col = 0; col < NUM_COLS; col++) {
+			if(canPlaceCoin(board, col)) {
+				uint8_t row = gameCoin.row;
+				memcpy(boardCopy, board, NUM_ROWS * NUM_COLS * sizeof(uint8_t));
+				placeCoin(boardCopy, row, col);
+				utilityScore_t branchScore = alphaBeta(boardCopy, depth + 1, alpha, beta, row, col, YELLOW, RED);
+
+				if(branchScore.score > scoreAndMove.score) {
+					scoreAndMove.score = branchScore.score;
+					scoreAndMove.col = col;
+					if(scoreAndMove.score > alpha) {
+						alpha = scoreAndMove.score;
+//						LCD_Clear(0, LCD_COLOR_WHITE);
+//						LCD_DisplayChar(100, 70, 'M');
+//						LCD_DisplayChar(120, 70, 'a');
+//						LCD_DisplayChar(135, 70, 'x');
+//						drawFromUnsignedInteger(100, 100, alpha);
+//						HAL_Delay(1000);
+					}
+				}
+
+				if(alpha >= beta) {
+					return scoreAndMove;
+				}
+			}
+		}
+
+	}
+
+	/* Else, minimizing score in this branch */
+	else {
+		/* Set to max score possible to find min score of this branch */
+		scoreAndMove.score = MAX_SCORE;
+		uint8_t boardCopy[NUM_ROWS][NUM_COLS];
+
+		for(int col = 0; col < NUM_COLS; col++) {
+			if(canPlaceCoin(board, col)) {
+				uint8_t row = gameCoin.row;
+				memcpy(boardCopy, board, NUM_ROWS * NUM_COLS * sizeof(uint8_t));
+				placeCoin(boardCopy, row, col);
+				utilityScore_t branchScore = alphaBeta(boardCopy, depth + 1, alpha, beta, row, col, RED, YELLOW);
+
+				if(branchScore.score < scoreAndMove.score) {
+					scoreAndMove.score = branchScore.score;
+					scoreAndMove.col = col;
+					if(scoreAndMove.score < beta) {
+						beta = scoreAndMove.score;
+//						LCD_Clear(0, LCD_COLOR_WHITE);
+//						LCD_DisplayChar(100, 70, 'M');
+//						LCD_DisplayChar(120, 70, 'i');
+//						LCD_DisplayChar(135, 70, 'n');
+//						drawFromUnsignedInteger(100, 100, beta);
+//						HAL_Delay(1000);
+					}
+				}
+
+				if(beta <= alpha) {
+					return scoreAndMove;
+				}
+			}
+		}
+	}
+
+	return scoreAndMove;
 }

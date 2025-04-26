@@ -372,12 +372,12 @@ void LCD_Draw_Game_Button(uint8_t xLower, uint8_t len, uint8_t yLower, uint8_t h
 
 void LCD_Draw_Board_Structure(void) {
 
-	for(int i = 0; i <= CONNECT_FOUR_COLUMN_COUNT; i++) {
+	for(int i = 0; i <= NUM_COLS; i++) {
 
 		LCD_Draw_Vertical_Line(BOARD_LEFT_BOUND + (i * BOARD_SQUARE_LENGTH), BOARD_TOP_BOUND, BOARD_BOTTOM_BOUND - BOARD_TOP_BOUND, LCD_COLOR_BLACK);
 	}
 
-	for(int j = 0; j <= CONNECT_FOUR_ROW_COUNT; j++) {
+	for(int j = 0; j <= NUM_ROWS; j++) {
 		LCD_Draw_Horizontal_Line(BOARD_LEFT_BOUND, BOARD_BOTTOM_BOUND - (j * BOARD_SQUARE_LENGTH), BOARD_RIGHT_BOUND - BOARD_LEFT_BOUND, LCD_COLOR_BLACK);
 	}
 

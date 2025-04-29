@@ -486,7 +486,7 @@ void drawFromUnsignedInteger(uint16_t xPos, uint16_t yPos, uint32_t number) {
 	sprintf(buffer, "%lu", number);
 	uint8_t i = 0;
 	while(buffer[i]) {
-		LCD_DisplayChar(xPos + (i * 13), yPos, buffer[i]);
+		LCD_DisplayChar(xPos + (i * CHARACTER_OFFSET), yPos, buffer[i]);
 		i++;
 	}
 

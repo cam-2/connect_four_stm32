@@ -24,7 +24,10 @@ coin_t gameCoin;
 
 
 void setGameMode(uint8_t mode) {
-	sessionGameMode = mode;
+
+	if(mode == AI_MODE_SELECT || TWO_PLAYER_SELECT) {
+		sessionGameMode = mode;
+	}
 }
 
 
@@ -131,6 +134,9 @@ uint8_t getScoreByDirection(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint
             if (board[row][col] == player) {
                 score++;
             }
+            else if (board[row][col] == (player % 2) + 1) {
+            	score = 0;
+            }
         }
         else {
         	return score;
@@ -218,7 +224,7 @@ void playTurn(void) {
 	else {
 		LCD_Display_Coin((gameCoin.col + COIN_GAME_LOGIC_OFFSET) * BOARD_X_OFFSET, gameCoin.yPos, LCD_COLOR_RED);
 		if(sessionGameMode == AI_MODE_SELECT) {
-			utilityScore_t AIMove = alphaBeta(gameBoard, 0, MIN_SCORE, MAX_SCORE, 0, 0, RED, YELLOW);
+			utilityScore_t AIMove = alphaBeta(gameBoard, 0, MIN_SCORE, MAX_SCORE, -1, -1, RED, YELLOW);
 			gameCoin.col = AIMove.col;
 			if(canPlaceCoin(gameBoard, gameCoin.col)) {
 				placeCoin(gameBoard, gameCoin.row, gameCoin.col);
@@ -237,11 +243,6 @@ void playTurn(void) {
 		}
 	}
 
-	if(checkWinner(gameBoard, gameCoin.row, gameCoin.col, playerTurn)) {
-		incrementWinCount();
-	}
-	checkTie();
-	playerTurn = (playerTurn == YELLOW) ? RED : YELLOW;
 }
 
 
@@ -251,16 +252,16 @@ void playGame(void) {
     HAL_TIM_Base_Start_IT(&htim2);
 	while(!gameOver) {
 		playTurn();
+		if(checkWinner(gameBoard, gameCoin.row, gameCoin.col, playerTurn)) {
+			incrementWinCount();
+		}
+		else {
+			checkTie();
+		}
+		playerTurn = (playerTurn == YELLOW) ? RED : YELLOW;
 	}
     HAL_TIM_Base_Stop_IT(&htim2);
 }
-
-
-/*****************************************/
-/*****************************************/
-/********** AI FUNCTIONS START ***********/
-/*****************************************/
-/*****************************************/
 
 
 int8_t getScoreOfPosition(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t player) {
@@ -303,24 +304,27 @@ int8_t getScoreOfPosition(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_
 utilityScore_t alphaBeta(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t depth, int8_t alpha, int8_t beta, uint8_t row, uint8_t col, uint8_t playerToMove, uint8_t prevPlayer) {
 
 	utilityScore_t scoreAndMove = { .col = 0, .score = 0 };
-	scoreAndMove.score = getScoreOfPosition(board, row, col, prevPlayer);
 
-	/* Calculate utility of the terminal node in our minimax tree. */
-	if(depth == MAX_DEPTH_SEARCH || scoreAndMove.score == MAX_SCORE || scoreAndMove.score == TIE_SCORE) {
-		/* Player is maximizing, so just return the score calculated. */
-		if(prevPlayer == RED) {
+	if(row != -1) {
+		scoreAndMove.score = getScoreOfPosition(board, row, col, prevPlayer);
 
+		/* Calculate utility of the terminal node in our minimax tree. */
+		if(depth == MAX_DEPTH_SEARCH || scoreAndMove.score == MAX_SCORE || scoreAndMove.score == TIE_SCORE) {
+			/* Player is maximizing, so just return the score calculated. */
+			if(prevPlayer == RED) {
+
+				return scoreAndMove;
+			}
+
+			/* Enemy player won, so set the weight heavily low. */
+			if(scoreAndMove.score == MAX_SCORE) {
+
+				scoreAndMove.score = MIN_SCORE;
+			}
+
+			scoreAndMove.score = -scoreAndMove.score;
 			return scoreAndMove;
 		}
-
-		/* Enemy player won, so set the weight heavily low. */
-		if(scoreAndMove.score == MAX_SCORE) {
-
-			scoreAndMove.score = MIN_SCORE;
-		}
-
-		scoreAndMove.score = -scoreAndMove.score;
-		return scoreAndMove;
 	}
 
 	/* If maximizing and not terminal, search for the maximum in this branch. */
@@ -341,12 +345,6 @@ utilityScore_t alphaBeta(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t depth, int8_
 					scoreAndMove.col = col;
 					if(scoreAndMove.score > alpha) {
 						alpha = scoreAndMove.score;
-//						LCD_Clear(0, LCD_COLOR_WHITE);
-//						LCD_DisplayChar(100, 70, 'M');
-//						LCD_DisplayChar(120, 70, 'a');
-//						LCD_DisplayChar(135, 70, 'x');
-//						drawFromUnsignedInteger(100, 100, alpha);
-//						HAL_Delay(1000);
 					}
 				}
 
@@ -376,12 +374,6 @@ utilityScore_t alphaBeta(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t depth, int8_
 					scoreAndMove.col = col;
 					if(scoreAndMove.score < beta) {
 						beta = scoreAndMove.score;
-//						LCD_Clear(0, LCD_COLOR_WHITE);
-//						LCD_DisplayChar(100, 70, 'M');
-//						LCD_DisplayChar(120, 70, 'i');
-//						LCD_DisplayChar(135, 70, 'n');
-//						drawFromUnsignedInteger(100, 100, beta);
-//						HAL_Delay(1000);
 					}
 				}
 

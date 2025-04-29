@@ -28,11 +28,23 @@ void displayMenu(void);
 void waitForUserResponse(void);
 
 #if (COMPILE_TOUCH_FUNCTIONS == 1)
-/* Called when a button is pressed. Used for interactive feel when touching screen.*/
-void triggerGameButtonResponse();
 
+/* Called when a button is pressed. Used for interactive feel when touching screen.*/
+void triggerGameButtonResponse(void);
+
+/* Checks if the touch screen has been pressed by calling the HAL LCD driver
+ * function returnTouchStateAndLocation(). If the touch screen has been pressed,
+ * but not on one of the buttons displayed on the screen, returns false.
+ * Otherwise, calls triggerGameButton() response and returns true.
+ */
 uint8_t checkIfTouchScreenPressed(void);
 
+/* If game button pressed, Sets the session game mode if not set.
+ * Otherwise, selects the current game mode. Returns true in both cases.
+ * If no game button pressed, returns false.
+ * Expected xInput and yInput parameters are the respective x and y input of the
+ * location that the LCD display was pressed.
+ */
 uint8_t gameButtonPressed(uint16_t xInput, uint16_t yInput);
 #endif // (COMPILE_TOUCH_FUNCTIONS == 1)
 

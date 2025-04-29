@@ -48,24 +48,103 @@ typedef struct {
 	uint8_t col;
 } utilityScore_t;
 
+/* Sets the game mode of the current game session. Accepted inputs:
+ * AI_MODE_SELECT
+ * TWO_PLAYER_SELECT
+ */
 void setGameMode(uint8_t mode);
+
+/* Resets the static gameBoard variable to an empty gameBoard.
+ * Called before a new game starts.
+ */
 void resetBoard(void);
+
+/* Calls resetBoard() to reset the static gameBoard variable, and initializes the static
+ * gameOver, numTimeElapsedInGame, and playerTurn variables for a new game. Then, plays a
+ * new game.
+ */
 void startNewGame(void);
+
+/* This function draws the board for a new Connect Four game, and starts a timer before
+ * entering a loop which calls playTurn() until a game ending condition (a win or tie)
+ * has been met. At the end of each turn there is a check for a win or tie condition.
+ * If it ended upon a win condition the winner's win count is incremented.
+ * Stops the timer after the game ends.
+ */
 void playGame(void);
+
+/* If the player turn is YELLOW (player 1), the playTurn function will enter a loop waiting for user input.
+ * If the user has chosen to move the coin by touching the LCD display, the coin will move in the desired location.
+ * Otherwise, the loop terminating condition is only met when the button is pressed and the coin is dropped.
+ * Dependant uppon the game mode, player RED will either mirror player 1's turn logic, or an AI will play against
+ * player 1.
+ */
 void playTurn(void);
+
+/* Increments the win count based on the current player's turn.
+ * Called during the playTurn function after the checkWinner()
+ * function has been called and returned True.
+ */
 void incrementWinCount(void);
+
+/* Checks for a tie condition by checking if any free spots are available in the top row,
+ * i.e NUM_ROWS - 1. If all of these are filled, we know the entire board is filled by nature
+ * of connect four.
+ */
 void checkTie(void);
+
+/* Checks for each possible win condition (horizontal, vertical, and diagonal). The bounds
+ * of the board that are checked in each respective direction are offset by some number
+ * dependant upon that direction to account for the requirement of 4 coins in a row to win.
+ */
 uint8_t checkWinner(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t player);
+
+/* Calculates the number of matching coins based on the row and column position of the last coin placed,
+ * and the player who placed the coin. For every matching coin in the desired direction (given by the
+ * rowDelta and colDelta parameters), increments the score by 1. If the opposing player is blocking that
+ * direction, returns a score of 0.
+ */
 uint8_t getScoreByDirection(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t rowDelta, uint8_t colDelta, uint8_t player);
 
+/* Places the static gameCoin data structure back to its default location.
+ * Expected to be called at the start of every turn.
+ */
 void resetCoinPos(void);
+
+/* Uses the HAL LCD driver function returnTouchStateAndLocation to determine if the
+ * touch display has been pressed. If true, uses the x coordinate of the display
+ * to determine which direction the user has decided to move the coin, and calls the
+ * moveCoin() function.
+ */
 void checkIfUserMovedCoin(void);
+
+/* Moves the column position of the gameCoin to the selected column. */
 void moveCoin(uint8_t col);
+
+/* Places a coin in the desired row and col, with an implicit assumption that it is free
+ * based on what canPlaceCoin returned. Still does a preliminary check, however, does not
+ * return an error if the coin was not placed.
+ */
 void placeCoin(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col);
+
+/* Checks the column if there are any free spots available by iterating
+ * every row of the board at the desired column. Sets the GameCoin row
+ * to the free row and returns true if it finds a free row, otherwise
+ * returns false.
+ */
 uint8_t canPlaceCoin(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t col);
 
-/* Alpha-beta search functions for AI logic. */
+/* Utility function used for alpha-beta search algorithm for AI play.
+ * Calculates the score of the current position, which is passed in as a row and column of
+ * the last coin placed. Utilizes the getScoreByDirection function to add up the number of
+ * matching coins of the player for each horizontal direction, each diagonal direction, and
+ * the vertical direction.
+ */
 int8_t getScoreOfPosition(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t row, uint8_t col, uint8_t player);
+
+/* Mini-Max search algorithm with alpha-beta pruning. The player maximizing is the playerToMove
+ * passed in the initial function call, with the prevPlayer being the player minimizing.
+ */
 utilityScore_t alphaBeta(uint8_t board[NUM_ROWS][NUM_COLS], uint8_t depth, int8_t alpha, int8_t beta, uint8_t row, uint8_t col, uint8_t playerToMove, uint8_t prevPlayer);
 
 #endif /* INC_GAMELOGIC_H_ */

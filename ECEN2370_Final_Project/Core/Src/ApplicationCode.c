@@ -74,7 +74,7 @@ uint8_t checkIfTouchScreenPressed(void) {
 
 uint8_t gameButtonPressed(uint16_t xInput, uint16_t yInput) {
 
-	if((xInput >= BUTTON_ONE_X_LOWER && xInput <= BUTTON_ONE_X_UPPER) && (yInput >= BUTTON_ONE_Y_LOWER && yInput <= BUTTON_ONE_Y_UPPER) && !gameSelect) {
+	if((!gameSelect && xInput >= BUTTON_ONE_X_LOWER && xInput <= BUTTON_ONE_X_UPPER) && (yInput >= BUTTON_ONE_Y_LOWER && yInput <= BUTTON_ONE_Y_UPPER)) {
 		LCD_Draw_Game_Button(BUTTON_ONE_X_LOWER, BUTTON_ONE_X_UPPER - BUTTON_ONE_X_LOWER, BUTTON_ONE_Y_LOWER, BUTTON_ONE_Y_UPPER - BUTTON_ONE_Y_LOWER, LCD_COLOR_GREEN);
 		gameSelect = AI_MODE_SELECT;
 		return TRUE;
@@ -92,7 +92,7 @@ uint8_t gameButtonPressed(uint16_t xInput, uint16_t yInput) {
 	return FALSE;
 }
 
-void triggerGameButtonResponse() {
+void triggerGameButtonResponse(void) {
 
 	setGameMode(gameSelect);
 	HAL_Delay(750);

@@ -75,6 +75,8 @@
 #define BOARD_Y_OFFSET 30
 #define BORDER_Y_OFFSET 5
 
+#define CHARACTER_OFFSET 13
+
 #define COIN_RADIUS 12
 
 void LTCD__Init(void);

@@ -1,0 +1,49 @@
+/*
+ * ApplicationCode.h
+ *
+ *  Created on: April 17, 2025
+ *      Author: Cameron Thomas
+ */
+
+#include "LCD_Driver.h"
+#include "GameLogic.h"
+#include "Button_Driver.h"
+#include "stm32f4xx_hal.h"
+
+#ifndef INC_APPLICATIONCODE_H_
+#define INC_APPLICATIONCODE_H_
+
+void ApplicationInit(void);
+
+/* Game Functions */
+
+void buttonInit(void);
+
+void LCD_Display_Start_Screen(void);
+
+void LCD_Display_Stats_Screen(void);
+
+void displayMenu(void);
+
+void waitForUserResponse(void);
+
+#if (COMPILE_TOUCH_FUNCTIONS == 1)
+
+/* Called when a button is pressed. Used for interactive feel when touching screen.*/
+void triggerGameButtonResponse();
+
+/* Checks if the touch screen has been pressed by calling the HAL LCD driver
+ * function returnTouchStateAndLocation(). If the touch screen has been pressed,
+ * but not on one of the buttons displayed on the screen, returns false.
+ * Otherwise, calls triggerGameButton() response and returns true.
+ */
+uint8_t checkIfTouchScreenPressed(void);
+
+/*
+ * Expected xInput and yInput parameters are the respective x and y input of the
+ * location that the LCD display was pressed.
+ */
+uint8_t gameButtonPressed(uint16_t xInput, uint16_t yInput);
+#endif // (COMPILE_TOUCH_FUNCTIONS == 1)
+
+#endif /* INC_APPLICATIONCODE_H_ */

@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
 	<item key="hasShownOverlayPopupBefore" value="true"/>
-	<item key="replaceBarOpen" value="false"/>
+	<item key="replaceBarOpen" value="true"/>
+	<list key="replacehistory">
+		<item value="NUM_ROWS"/>
+		<item value="NUM_COLS"/>
+		<item value="MAX_SCORE"/>
+		<item value="BUTTON_IRQ_NUM"/>
+		<item value="getScoreByDirection"/>
+		<item value="gameCoin.row"/>
+		<item value="gameCoin.col"/>
+	</list>
+	<list key="searchhistory">
+		<item value="CONNECT_FOUR_ROW_COUNT"/>
+		<item value="CONNECT_FOUR_COLUMN_COUNT"/>
+		<item value="0xFF"/>
+		<item value="EXTI0_IRQn"/>
+		<item value="checkWinnerByDirection"/>
+		<item value="gameCoin.yPos"/>
+		<item value="gameCoin.xPos"/>
+	</list>
 </section>
